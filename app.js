@@ -1,22 +1,26 @@
 require('dotenv').config();
+
 const express = require('express');
-const pool = require('./src/config/db');
-
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-// Test database connection
-app.get('/test-db', async (req, res) => {
-    try {
-        const connection = await pool.getConnection();
-        await connection.ping();
-        connection.release();
-        res.json({ message: 'Database connection successful!' });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
+const postsRoutes = require('./src/routes/posts');
+const usersRoutes = require('./src/routes/users');
+
+app.use(express.json());
+
+app.use(postsRoutes);
+app.use(usersRoutes);
+
+app.use((err, req, res, next) => {
+    console.error(err);
+
+    if (err.code === 'ER_NO_REFERENCED_ROW_2') {
+        return res.status(400).json({ erreur: 'user_id invalide : utilisateur inexistant' });
     }
+
+    res.status(500).json({ erreur: 'Erreur serveur' });
 });
 
-app.listen(PORT, () => {
-    console.log(`Serveur démarré sur http://localhost:${PORT}`);
+app.listen(3000, () => {
+    console.log('Serveur démarré sur http://localhost:3000');
 });
